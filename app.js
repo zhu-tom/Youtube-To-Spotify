@@ -9,10 +9,6 @@ const querystring = require('querystring');
 
 app.use(cors());
 
-app.get('/', (req, res) => {
-    res.send("Hello World");
-});
-
 app.get("/credentials", (req, res) => {
     res.send(JSON.stringify({client_id: client_id, redirect_uri: redirect_uri}));
 });
@@ -44,6 +40,7 @@ app.get('/callback', (req, res) => {
                 access_token: result.access_token,
                 refresh_token: result.refresh_token,
                 id: data.id,
+                name: data.display_name
             };
             res.redirect(`http://localhost/Youtube-To-Spotify/#${querystring.stringify(sendBack)}`);
         });
@@ -51,26 +48,58 @@ app.get('/callback', (req, res) => {
 });
 
 app.get('/convert', (req, res) => {
-    const { playlist_id, user_id, access_token } = req.query;
+    let { playlist_name, playlist_id, user_id, access_token, refresh_token } = req.query;
+    refresh(refresh_token).then(token => {
+        access_token = token;
 
-    let url = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=50&playlistId=${playlist_id}&key=${yt_api_key}&access_token=${access_token}`;
-    getSongNames(url).then(titles=>{
-        const options = {
-            method: "POST",
-            headers: {
-                'Authorization': `Bearer ${access_token}`,
-                'Content-type': 'application/json'
-            },
-            body: JSON.stringify({
-                name: "Good Stuff"
+        let url = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=50&playlistId=${playlist_id}&key=${yt_api_key}&access_token=${access_token}`;
+        getSongNames(url)
+            .then(titles=>{
+                const options = {
+                    method: "POST",
+                    headers: {
+                        'Authorization': `Bearer ${access_token}`,
+                        'Content-type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        name: playlist_name
+                    })
+                };
+                let playlist_url = `https://api.spotify.com/v1/users/${user_id}/playlists`;
+                fetch(playlist_url, options).then(result=>result.json())
+                    .then(result=>{
+                        getSpotUris(result.id, titles, access_token)
+                            .then((unmatched)=>res.send(JSON.stringify(unmatched)));
+                    });
             })
-        };
-        let playlist_url = `https://api.spotify.com/v1/users/${user_id}/playlists`;
-        fetch(playlist_url, options).then(result=>result.json()).then(result=>{
-            getSpotUris(result.id, titles, access_token).then(()=>res.send("done"));
-        });
+            .catch(() => {
+                res.send(JSON.stringify({error: "bad yt api"}));
+            });
     });
 });
+
+async function refresh(refreshToken) {
+    const obj = {
+        grant_type: "refresh_token",
+        refresh_token: refreshToken,
+        client_id: client_id,
+        client_secret: client_secret
+    }
+    let params = new URLSearchParams();
+    for (let key in obj) {
+        params.append(key, obj[key]);
+    }
+    const options = {
+        method: "POST",
+        body: params,
+        headers: {
+            'Content-type': 'application/x-www-form-urlencoded'
+        }
+    }
+    let res = await fetch("https://accounts.spotify.com/api/token", options);
+    res = await res.json();
+    return res.access_token;
+}
 
 app.get('/test', () => {
     const playlist_id = "PL1CEzmuWnTyPHhnt7cv1seqJG7FkyMHty";
@@ -97,11 +126,13 @@ app.get('/test', () => {
 async function getSpotUris(spot_id, titles, access_token) {
     let spot_playlist_url = `https://api.spotify.com/v1/playlists/${spot_id}/tracks`;
 
+    let unmatched = [];
+
     while (titles.length > 0) {
         let toAdd = titles.slice(0, 100);
         titles = titles.slice(100);
         let spot_uris = [];     
-        for (title of toAdd) {
+        for (let title of toAdd) {
             title = encodeURIComponent(title);
             let search_url = `https://api.spotify.com/v1/search?q="${title}"&type=track&limit=1`;
             let options = {
@@ -111,9 +142,8 @@ async function getSpotUris(spot_id, titles, access_token) {
             }
             let res = await fetch(search_url, options);
             res = await res.json();
-            console.log(title);
             if (!res.tracks || !res.tracks.items[0]) {
-                console.log("bad------------");
+                unmatched.push(title);
             } else {
                 let mostPopular = res.tracks.items.reduce((prev, curr) => (curr.popularity > prev.popularity) ? curr : prev);
                 spot_uris.push(mostPopular.uri);
@@ -128,7 +158,7 @@ async function getSpotUris(spot_id, titles, access_token) {
             body: JSON.stringify({uris: spot_uris})
         }
         await fetch (spot_playlist_url, options);
-        return;
+        return unmatched;
     }
 }
 
@@ -136,6 +166,9 @@ async function getSongNames(mUrl) {
     let result = await fetch(mUrl);
     result = await result.json();
     let titles = [];
+
+    throw new Error("Error with Youtube API");
+
     for (const item of result.items) {
         titles.push(item.snippet.title);
     }
