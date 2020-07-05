@@ -1,6 +1,6 @@
 window.addEventListener("DOMContentLoaded", ()=>{
     var client_id, redirect_uri;
-    fetch("http://localhost:8080/credentials").then(res=>res.json()).then(res=>{
+    fetch("/credentials").then(res=>res.json()).then(res=>{
         redirect_uri = res.redirect_uri;
         client_id = res.client_id;
     });
@@ -65,7 +65,7 @@ window.addEventListener("DOMContentLoaded", ()=>{
             const unmatched = document.querySelector("#unmatched").innerHTML = "";
             details.style.display = "none";
             btn.classList.add("is-loading");
-            fetch(`http://localhost:8080/convert?playlist_name=${playlistName}&playlist_id=${playlistId}&user_id=${window.sessionStorage.getItem('id')}&access_token=${window.sessionStorage.getItem('access_token')}&refresh_token=${window.sessionStorage.getItem('refresh_token')}`)
+            fetch(`/convert?playlist_name=${playlistName}&playlist_id=${playlistId}&user_id=${window.sessionStorage.getItem('id')}&access_token=${window.sessionStorage.getItem('access_token')}&refresh_token=${window.sessionStorage.getItem('refresh_token')}`)
                 .then(res => {
                     btn.classList.remove("is-loading");
                     res.json().then(res => {

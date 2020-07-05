@@ -7,7 +7,13 @@ const {URLSearchParams} = require('url');
 const cors = require('cors');
 const querystring = require('querystring');
 
+app.use(express.static(__dirname + "/static"));
+
 app.use(cors());
+
+app.get("/", (_, res) => {
+    res.sendFile(__dirname + "/static/index.html");
+});
 
 app.get("/credentials", (req, res) => {
     res.send(JSON.stringify({client_id: client_id, redirect_uri: redirect_uri}));
@@ -42,7 +48,7 @@ app.get('/callback', (req, res) => {
                 id: data.id,
                 name: data.display_name
             };
-            res.redirect(`http://localhost/Youtube-To-Spotify/#${querystring.stringify(sendBack)}`);
+            res.redirect(`/#${querystring.stringify(sendBack)}`);
         });
     });
 });
@@ -188,4 +194,4 @@ async function getSongNames(mUrl) {
     return titles;
 }
 
-app.listen(8080);
+app.listen(process.env.PORT || 8080);
