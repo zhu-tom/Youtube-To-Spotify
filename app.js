@@ -1,4 +1,4 @@
-const { client_id, client_secret, redirect_uri, yt_api_key } = require('./credentials').credentials;
+const env = require('./credentials').env;
 
 const express = require('express');
 const fetch = require('node-fetch');
@@ -6,6 +6,10 @@ const app = express();
 const {URLSearchParams} = require('url');
 const cors = require('cors');
 const querystring = require('querystring');
+const redirect_uri = __dirname + "/callback";
+const client_id = process.env.CLIENT_ID || env.client_id;
+const client_secret = process.env.CLIENT_SECRET || env.client_secret;
+const yt_api_key = process.env.YT_API_KEY || env.yt_api_key;
 
 app.use(express.static(__dirname + "/static"));
 
