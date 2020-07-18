@@ -4,7 +4,7 @@ const app = express();
 const {URLSearchParams} = require('url');
 const cors = require('cors');
 const querystring = require('querystring');
-const redirect_uri = process.env.CLIENT_ID ? 'https://youtube-spotify-converter.herokuapp.com/callback': __dirname + "/callback";
+const redirect_uri = process.env.CLIENT_ID ? 'https://youtube-spotify-converter.herokuapp.com/callback': "http://localhost:8080/callback";
 let client_id = process.env.CLIENT_ID;
 let client_secret = process.env.CLIENT_SECRET;
 let yt_api_key = process.env.YT_API_KEY;
@@ -64,9 +64,7 @@ app.get('/callback', (req, res) => {
 
 app.get('/convert', (req, res) => {
     let { playlist_name, playlist_id, user_id, access_token, refresh_token } = req.query;
-    refresh(refresh_token).then(token => {
-        access_token = token;
-
+    refresh(refresh_token).then(access_token => {
         let url = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=50&playlistId=${playlist_id}&key=${yt_api_key}&access_token=${access_token}`;
         getSongNames(url)
             .then(titles=>{
@@ -182,7 +180,7 @@ async function getSongNames(mUrl) {
     result = await result.json();
     let titles = [];
 
-    throw new Error("Error with Youtube API");
+    if (!result.items) throw new Error("Error with Youtube API");
 
     for (const item of result.items) {
         titles.push(item.snippet.title);
