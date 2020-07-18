@@ -62,14 +62,14 @@ window.addEventListener("DOMContentLoaded", ()=>{
         if (!err) {
             const btn = document.querySelector("#convert");
             const details = document.querySelector("#details");
-            const unmatched = document.querySelector("#unmatched").innerHTML = "";
+            const unmatched = document.querySelector("#unmatched");
+            unmatched.innerHTML = "";
             details.style.display = "none";
             btn.classList.add("is-loading");
             fetch(`/convert?playlist_name=${playlistName}&playlist_id=${playlistId}&user_id=${window.sessionStorage.getItem('id')}&access_token=${window.sessionStorage.getItem('access_token')}&refresh_token=${window.sessionStorage.getItem('refresh_token')}`)
                 .then(res => {
                     btn.classList.remove("is-loading");
                     res.json().then(res => {
-
                         if (res.error) {
                             document.querySelector("#errorModal").classList.add("is-active");
                         } else {
@@ -82,8 +82,6 @@ window.addEventListener("DOMContentLoaded", ()=>{
                             }
                         }
                         
-                    }).catch(() => {
-                        console.log(res);
                     });
                 });
         }

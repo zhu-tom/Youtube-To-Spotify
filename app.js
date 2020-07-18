@@ -170,9 +170,9 @@ async function getSpotUris(spot_id, titles, access_token) {
             method: "POST",
             body: JSON.stringify({uris: spot_uris})
         }
-        await fetch (spot_playlist_url, options);
-        return unmatched;
+        await fetch(spot_playlist_url, options);
     }
+    return unmatched;
 }
 
 async function getSongNames(mUrl) {
@@ -180,7 +180,7 @@ async function getSongNames(mUrl) {
     result = await result.json();
     let titles = [];
 
-    if (!result.items) throw new Error("Error with Youtube API");
+    if(!result.items) throw new Error("Error with Youtube API");
 
     for (const item of result.items) {
         titles.push(item.snippet.title);
