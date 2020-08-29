@@ -63,6 +63,7 @@ app.get('/callback', (req, res) => {
 });
 
 app.get('/convert', (req, res) => {
+    console.log("here")
     let { playlist_name, playlist_id, user_id, access_token, refresh_token } = req.query;
     refresh(refresh_token).then(access_token => {
         let url = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=50&playlistId=${playlist_id}&key=${yt_api_key}&access_token=${access_token}`;
